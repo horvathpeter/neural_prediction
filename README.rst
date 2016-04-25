@@ -1,4 +1,3 @@
-# Neural Prediction
 Online time series forecasting using neural networks.
 
 Version 1.1
