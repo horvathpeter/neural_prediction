@@ -73,10 +73,6 @@ class Mlp(object):
         yy = pd.Series(data=y, index=index_y)
         pp = pd.Series(data=p, index=index_p)
 
-        # print("XX plot ", xx
-        # print("YY plot ", yy
-        # print("pp plot ", pp
-
         plt.plot(xx, color='blue')
         plt.plot(yy, color='blue')
         plt.plot(pp, color='green')
@@ -87,7 +83,7 @@ class Mlp(object):
             pp_before = pd.Series(data=p_before, index=index_p_before)
             plt.plot(pp_before, color='red')
         except IndexError:
-            print ("No real misc yet")
+            print ("No real data yet")
             pass
 
         plt.draw()

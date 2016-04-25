@@ -6,6 +6,7 @@ Usage:
   neupre staticlstm [--onestep | --multistep] [-f FILE]
   neupre onlinemlp (--simsteps=<steps> | --simtoend) [-f FILE]
   neupre onlinelstm
+  neupre clean
   neupre -h | --help
   neupre --version
 
@@ -13,11 +14,13 @@ Options:
   -f FILE                           Time series file [default: neupre/misc/data/91_trnava_suma_stand.csv].
   --onestep                         One step ahead prediction (15 minutes ahead)
   --multistep                       Multi step ahead prediction (one day ahead)
+  clean                             Remove files creted by running the program
   -h --help                         Show this screen.
   --version                         Show version.
 
 Examples:
   neupre staticmlp --onestep -f neupre/misc/data/91_trnava_suma.csv
+  neupre onlinemlp --simteps=20 neupre/misc/data/91_trnava_suma_stand.csv
 
 Help:
   For help using this tool, please open an issue on the Github repository:
