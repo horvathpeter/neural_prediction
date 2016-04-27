@@ -9,15 +9,13 @@ from pybrain.supervised.trainers import BackpropTrainer
 from pybrain.tools.shortcuts import buildNetwork
 
 
-
-
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
 def mape(real, pred):
     """Returns mean average percentage error"""
-    return 100 * np.mean(np.abs(real - pred) / real)
+    return 100 * np.mean(np.abs((real - pred) / real))
 
 
 def mapke(ypred, ytrue):

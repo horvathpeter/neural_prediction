@@ -20,7 +20,7 @@ def build_model_mlp(inputs, hiddens, outputs):
     ))
     start = time.time()
     print ("Compiling...")
-    model.compile(optimizer='SGD', loss='mse')
+    model.compile(loss='mse', optimizer='SGD')
     print ("Compiled and took ", time.time() - start, "seconds")
     return model
 

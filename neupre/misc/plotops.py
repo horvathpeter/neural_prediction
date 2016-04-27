@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-
-
 class Plotter(object):
     def __init__(self):
         matplotlib.style.use('ggplot')

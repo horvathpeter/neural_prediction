@@ -44,7 +44,7 @@ def load_data(dataset=None,
 
     print ("Data shape  : ", result.shape)
 
-    row = int(round(0.95 * result.shape[0]))
+    row = int(round(0.90 * result.shape[0]))
 
     train = result[:row, :]
     if shuffle:
@@ -58,7 +58,65 @@ def load_data(dataset=None,
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
         X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-    return [X_train, y_train, X_test, y_test]
+    return [X_train, y_train, X_test, y_test, result_mean, result_std]
+
+
+def load_data_corr(path_to_dataset='neupre/misc/data/91_trnava_suma_.csv',
+                   ratio=1.0,
+                   sequence_length=6,
+                   shuffle=False,
+                   zscore=True,
+                   reshape=False):
+    max_values = ratio * 57216
+    with open(path_to_dataset) as f:
+        data = csv.reader(f, delimiter=",")
+        power = []
+        nb_of_values = 0
+        for line in data:
+            try:
+                power.append(float(line[2]))
+                nb_of_values += 1
+            except ValueError:
+                pass
+            if nb_of_values >= max_values:
+                break
+    print ("Data loaded from csv. Formatting...")
+
+    result = []
+    for t in range(len(power) - 336*4):
+        inp = []
+        inp.append(power[t])
+        inp.append(power[t+24*4])
+        inp.append(power[t+144*4])
+        inp.append(power[t+168*4])
+        inp.append(power[t+169*4])
+        inp.append(power[t+192*4])
+        inp.append(power[t+336*4])
+        result.append(inp)
+    result = np.array(result)
+
+    print ("Data shape : ", result.shape)
+
+    if zscore:
+        result_mean = result.mean()
+        result_std = result.std()
+        result -= result_mean
+        result /= result_std
+        print ("Shift : ", result_mean)
+
+    row = int(round(0.95 * result.shape[0]))
+
+    train = result[:row, :]
+    X_train = train[:, :-1]
+    y_train = train[:, -1]
+    X_test = result[row:, :-1]
+    y_test = result[row:, -1]
+
+    if reshape:
+        X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+        X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
+
+    return [X_train, y_train, X_test, y_test, result_mean, result_std]
 
 
 def load_data_days(dataset=None,
@@ -91,6 +149,9 @@ def load_data_days(dataset=None,
     for index in np.arange(start=0, stop=57120, step=96):
         result.append(power[index: index + 96 * 2])
 
+    # for index in range(len(power) - sequence_length*2):
+    #     result.append(power[index: index + sequence_length*2])
+
     result = np.array(result)
     if zscore:
         result_mean = result.mean()
@@ -116,12 +177,13 @@ def load_data_days(dataset=None,
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
         X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-    return [X_train, y_train, X_test, y_test]
+    return [X_train, y_train, X_test, y_test, result_mean, result_std]
 
 
 def load_data_days_online(maxline,
                           dataset=None,
-                          path_to_dataset='neupre/misc/data/91_trnava_suma_stand.csv'):
+                          path_to_dataset='neupre/misc/data_zscore/91_trnava_suma_zscore.csv',
+                          reshape=False):
     if isinstance(dataset, np.ndarray):
         power = dataset
         print ("Dataset by user. Formatting...")
@@ -150,14 +212,17 @@ def load_data_days_online(maxline,
     X_train = result[:, :half]
     y_train = result[:, half:]
 
+    if reshape:
+        X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+
     return [X_train, y_train]
 
 
 def load_data_point_online(maxline=96,
-                           path_to_dataset='neupre/misc/data/91_trnava_suma_stand.csv',
+                           path_to_dataset='neupre/misc/data_zscore/91_trnava_suma_zscore.csv',
                            skip=None):
     with open(path_to_dataset) as f:
-        data = pd.read_csv(f, skiprows=skip, header=None, nrows=96)
+        data = pd.read_csv(f, skiprows=skip, header=None, nrows=maxline)
     print ("Data loaded from csv. Formatting...")
     result = np.array(data[2])
     print ("Data shape : ", result.shape)

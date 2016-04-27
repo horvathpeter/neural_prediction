@@ -8,13 +8,14 @@ from keras.layers.core import Dense
 from keras.models import Sequential
 
 from neupre.misc.dataops import load_data
+from .base import Base
 
 plt.style.use('ggplot')
 
 decompfreq = 24 * 60 / 15 * 7
 
 
-class Decompose():
+class Decompose(Base):
     """Example"""
 
     def run(self):
