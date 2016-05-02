@@ -9,3 +9,4 @@ class Base(object):
 
     def run(self):
         raise NotImplementedError("The run() method is not implemented!")
+

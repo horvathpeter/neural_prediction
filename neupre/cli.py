@@ -11,7 +11,7 @@ Usage:
   neupre --version
 
 Options:
-  -f FILE                           Time series file [default: neupre/misc/data/91_trnava_suma_stand.csv].
+  -f FILE                           Time series file [default: neupre/misc/data_/91_trnava_suma_stand.csv].
   --onestep                         One step ahead prediction (15 minutes ahead)
   --multistep                       Multi step ahead prediction (one day ahead)
   clean                             Remove files creted by running the program
@@ -29,7 +29,10 @@ Help:
 
 from inspect import getmembers, isclass
 from docopt import docopt
-from . import __version__ as VERSION
+
+# from . import __version__ as VERSION
+
+VERSION = '1.2'
 
 
 def main():
@@ -47,3 +50,38 @@ def main():
             command = [command[1] for command in commands if command[0] != 'Base'][0]
             command = command(options)
             command.run()
+
+
+from neupre.instructions import StaticMlp
+from neupre.instructions.onlinemlp import OnlineMlp
+from neupre.instructions.onlinelstm import OnlineLstm
+
+options = {'--help': False,
+           '--multistep': False,
+           '--onestep': False,
+           '--onestep96': False,
+           '--simsteps': 50,
+           '--simtoend': False,
+           '--version': False,
+           '-f': 'misc/data_zscore/8_ba_suma_zscore.csv',
+           'clean': False,
+           'onlinelstm': False,
+           'onlinemlp': True,
+           'staticlstm': False,
+           'staticmlp': False}
+
+# data_path = "neupre/misc/data_"
+# file = "neupre/misc/data_/91_trnava_suma_.csv"
+
+# simulation_mlp = StaticMlp(options)
+# simulation_lstm = StaticLSTM(options)
+# simulation_mlp.run()
+# simulation_lstm.run()
+
+# sim_mlp = OnlineMlp(options)
+# sim_mlp.run()
+
+sim_lstm = OnlineLstm(options)
+sim_lstm.run()
+
+

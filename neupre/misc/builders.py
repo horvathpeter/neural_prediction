@@ -2,7 +2,7 @@ import time
 
 from keras.layers.core import Dense
 from keras.layers.core import Dropout, Activation
-from keras.layers.recurrent import LSTM
+from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.models import Sequential
 
 
@@ -25,6 +25,46 @@ def build_model_mlp(inputs, hiddens, outputs):
     return model
 
 
+def build_model_recurrent(inputs, hiddens1, outputs):
+    model = Sequential()
+    model.add(SimpleRNN(
+        output_dim=hiddens1,
+        input_shape=(inputs, 1),
+        return_sequences=False,
+        activation='tanh'
+    ))
+
+    model.add(Dense(
+        output_dim=outputs,
+        activation='linear'
+    ))
+    print ("Compiling...")
+    start = time.time()
+    model.compile(loss='mse', optimizer='rmsprop')
+    print ("Compiled and took ", time.time() - start, " seconds")
+    return model
+
+
+def build_model_lstm_simple(inputs, hiddens1, outputs):
+    model = Sequential()
+    model.add(LSTM(
+        output_dim=hiddens1,
+        input_shape=(inputs, 1),
+        return_sequences=False,
+        activation='tanh'
+    ))
+
+    model.add(Dense(
+        output_dim=outputs,
+        activation='linear'
+    ))
+    print ("Compiling...")
+    start = time.time()
+    model.compile(loss='mse', optimizer='rmsprop')
+    print ("Compiled and took ", time.time() - start, " seconds")
+    return model
+
+
 def build_model_lstm(inputs, hiddens1, hiddens2, outputs):
     model = Sequential()
 
@@ -32,12 +72,12 @@ def build_model_lstm(inputs, hiddens1, hiddens2, outputs):
         output_dim=hiddens1,
         input_shape=(inputs, 1),
         return_sequences=True))
-    model.add(Dropout(0.2))
+    # model.add(Dropout(0.2))
 
     model.add(LSTM(
         hiddens2,
         return_sequences=False))
-    model.add(Dropout(0.2))
+    # model.add(Dropout(0.2))
 
     model.add(Dense(
         output_dim=outputs))

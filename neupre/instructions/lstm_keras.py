@@ -9,8 +9,6 @@ from keras.layers.recurrent import LSTM
 from keras.models import Sequential
 from sklearn import metrics
 
-from onlinemlp import load_data_point
-
 
 class ImplementationFFNN(object):
     def __init__(self, input_dim, hidden_dim_1, hidden_dim_2, output_dim, learning_rate):
