@@ -16,18 +16,7 @@ def load_data(dataset=None,
         print ("Dataset by user. Formatting...")
     elif path:
         max_values = ratio * 57216
-        with open(path) as f:
-            data = csv.reader(f, delimiter=",")
-            power = []
-            nb_of_values = 0
-            for line in data:
-                try:
-                    power.append(float(line[2]))
-                    nb_of_values += 1
-                except ValueError:
-                    pass
-                if nb_of_values >= max_values:
-                    break
+        power = power_from_file(path, max_values)
         print ("Data loaded from csv. Formatting...")
 
     result = []
@@ -81,14 +70,6 @@ def load_data_corr(path='neupre/misc/data_/91_trnava_suma_.csv',
         inp.append(power[t + (336 * 4 - 24 * 4 * 6)])
         inp.append(power[t + (336 * 4 - 24 * 4)])
         inp.append(power[t + 336 * 4])
-
-        # inp.append(power[t])
-        # inp.append(power[t + 24 * 4])
-        # inp.append(power[t + 144 * 4])
-        # inp.append(power[t + 168 * 4])
-        # inp.append(power[t + 169 * 4])
-        # inp.append(power[t + 192 * 4])
-        # inp.append(power[t + 336 * 4])
         result.append(inp)
     result = np.array(result)
 
@@ -104,6 +85,8 @@ def load_data_corr(path='neupre/misc/data_/91_trnava_suma_.csv',
     row = int(round(0.95 * result.shape[0]))
 
     train = result[:row, :]
+    if shuffle:
+        np.random.shuffle(train)
     X_train = train[:, :-1]
     y_train = train[:, -1]
     X_test = result[row:, :-1]
@@ -113,7 +96,8 @@ def load_data_corr(path='neupre/misc/data_/91_trnava_suma_.csv',
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
         X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-    return [X_train, y_train, X_test, y_test, result_mean, result_std]
+    return [X_train, y_train, X_test, y_test]
+    # return [X_train, y_train, X_test, y_test, result_mean, result_std]
 
 
 def load_data_days(dataset=None,
@@ -128,18 +112,7 @@ def load_data_days(dataset=None,
         print ("Dataset by user. Formatting...")
     elif path:
         max_values = ratio * 57216
-        with open(path) as f:
-            data = csv.reader(f, delimiter=",")
-            power = []
-            nb_of_values = 0
-            for line in data:
-                try:
-                    power.append(float(line[2]))
-                    nb_of_values += 1
-                except ValueError:
-                    pass
-                if nb_of_values >= max_values:
-                    break
+        power = power_from_file(path, max_values)
         print ("Data loaded from csv. Formatting...")
 
     result = []
@@ -257,14 +230,14 @@ def load_data_online(maxline,
 
 def load_data_corr_online(maxline,
                           dataset=None,
-                          path_to_dataset='neupre/misc/data_zscore/91_trnava_suma_zscore.csv',
+                          path='neupre/misc/data_zscore/91_trnava_suma_zscore.csv',
                           reshape=False):
     power = None
     if isinstance(dataset, np.ndarray):
         power = dataset
         print ("Dataset by user. Formatting...")
-    elif path_to_dataset:
-        power = power_from_file(path_to_dataset, maxline)
+    elif path:
+        power = power_from_file(path, maxline)
         print ("Data loaded from csv. Formatting...")
 
     result = []
@@ -277,13 +250,6 @@ def load_data_corr_online(maxline,
         inp.append(power[t + (336 * 4 - 24 * 4 * 6)])
         inp.append(power[t + (336 * 4 - 24 * 4)])
         inp.append(power[t + 336 * 4])
-        # inp.append(power[t])
-        # inp.append(power[t + 24 * 4])
-        # inp.append(power[t + 144 * 4])
-        # inp.append(power[t + 168 * 4])
-        # inp.append(power[t + 169 * 4])
-        # inp.append(power[t + 192 * 4])
-        # inp.append(power[t + 336 * 4])
         result.append(inp)
     result = np.array(result)
     print ("Data shape: ", result.shape)

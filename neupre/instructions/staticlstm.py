@@ -1,13 +1,15 @@
 from .base import Base
 
 import numpy as np
+
 import matplotlib.pyplot as plt
-from neupre.misc.dataops import load_data, load_data_days, load_data_corr
+from neupre.misc.dataops import load_data, load_data_days
 from neupre.misc.dataops import load_data_days_more
 from neupre.misc.dataops import get_validation_data
-from neupre.misc.builders import build_model_lstm, build_model_lstm_simple, build_model_recurrent
+from neupre.misc.builders import build_model_lstm, build_model_lstm_simple, build_model_recurrent, build_model_mlp
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from neupre.instructions.neuralops import mape
+
 plt.style.use('ggplot')
 
 from keras.callbacks import Callback
@@ -49,7 +51,8 @@ class StaticLSTM(Base):
             # train
             # log = model.fit(X_train, y_train, nb_epoch=10, batch_size=100, validation_split=0.1, verbose=2)
             my_log = LossHistory()
-            log = model.fit(X_train, y_train, nb_epoch=10, batch_size=10, validation_data=(X_val, y_val), verbose=1, callbacks=[my_log])
+            log = model.fit(X_train, y_train, nb_epoch=10, batch_size=10, validation_data=(X_val, y_val), verbose=1,
+                            callbacks=[my_log])
 
             # print log.history
             plt.figure(10)
@@ -87,7 +90,8 @@ class StaticLSTM(Base):
 
         if self.options['--multistep']:
             # X_train, y_train, X_test, y_test, mean, std = load_data_days_more(path=self.options['-f'], reshape=True, shuffle=True)
-            X_train, y_train, X_test, y_test, mean, std = load_data_days(path=self.options['-f'], reshape=True, shuffle=True)
+            X_train, y_train, X_test, y_test, mean, std = load_data_days(path=self.options['-f'], reshape=True,
+                                                                         shuffle=True)
             model = build_model_lstm_simple(96, 200, 96)
             # model = build_model_lstm_simple(96*5, 200, 96)
             # model = build_model_recurrent(96, 200, 96)
@@ -99,7 +103,8 @@ class StaticLSTM(Base):
             my_log = LossHistory()
 
             # log = model.fit(X_train, y_train, nb_epoch=30, batch_size=20, validation_split=0.1, verbose=2)
-            log = model.fit(X_train, y_train, nb_epoch=100, batch_size=100, validation_data=(X_val, y_val), verbose=1, callbacks=[my_log])
+            log = model.fit(X_train, y_train, nb_epoch=100, batch_size=100, validation_data=(X_val, y_val), verbose=1,
+                            callbacks=[my_log])
 
             print log.history
 
@@ -138,12 +143,27 @@ class StaticLSTM(Base):
             f.close()
 
         if self.options['--onestep96']:
-            X_train, y_train, X_test, y_test, mean, std = load_data_corr(reshape=True)
+            from neupre.misc.dataops import load_data_corr
+            X_train, y_train, X_test, y_test = load_data_corr(reshape=True,
+                                                              path='neupre/misc/data_zscore/8_ba_suma_zscore.csv',
+                                                              zscore=False,
+                                                              shuffle=True)
             model = build_model_lstm(6, 3, 2, 1)
+            model2 = build_model_lstm_simple(6, 3, 1)
+            model3 = build_model_mlp(6, 3, 1)
+            model4 = build_model_recurrent(6, 3, 1)
+
             # train
-            log = model.fit(X_train, y_train, nb_epoch=20, batch_size=100, validation_split=0.1, verbose=1)
+            log = model.fit(X_train, y_train, nb_epoch=2, batch_size=10, validation_split=0.1, verbose=1)
+            log = model2.fit(X_train, y_train, nb_epoch=2, batch_size=10, validation_split=0.1, verbose=1)
+            log = model3.fit(X_train, y_train, nb_epoch=2, batch_size=10, validation_split=0.1, verbose=1)
+            log = model4.fit(X_train, y_train, nb_epoch=2, batch_size=10, validation_split=0.1, verbose=1)
+
             # predict
             y_pred = model.predict(X_test)
+            y_pred = model2.predict(X_test)
+            y_pred = model3.predict(X_test)
+            y_pred = model4.predict(X_test)
 
             y_pred = np.reshape(y_pred, (y_pred.shape[0],))
 
@@ -154,6 +174,9 @@ class StaticLSTM(Base):
             plt.plot(y_test)
             plt.plot(y_pred)
             plt.show()
+
+            mean = 119694.44453877833
+            std = 27297.4321577972
 
             y_test *= std
             y_test += mean

@@ -143,7 +143,7 @@ def decompose():
     # train = result[:row, :]
     # # np.random.shuffle(train)
     # X_trend = train[:, :-1]
-    # y_trend = train[:, -1]
+    # y_t rend = train[:, -1]
     # X_trendt = result[row:, :-1]
     # y_trendt = result[row:, -1]
     # model.fit(X=X_trend, y=y_trend, nb_epoch=1, batch_size=100)

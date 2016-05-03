@@ -16,13 +16,15 @@ class OnlineMlp(Base):
                 imp.sim()
 
             plt.figure(1, figsize=(20, 4))
-            plt.plot(imp.maes)
+            plt.plot(imp.maes_multi)
+            plt.plot(imp.maes_one96)
             plt.savefig('maes.png')
             plt.figure(2, figsize=(20, 4))
-            plt.plot(imp.mses)
+            plt.plot(imp.mses_multi)
+            plt.plot(imp.mses_one96)
             plt.savefig('mses.png')
             plt.figure(3, figsize=(20, 4))
-            plt.plot(imp.mapes)
+            plt.plot(imp.mapes_multi)
             plt.savefig('mapes.png')
         elif self.options['--simtoend']:
             pass
