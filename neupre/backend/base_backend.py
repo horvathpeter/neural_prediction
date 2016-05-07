@@ -2,18 +2,15 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from neupre.instructions.neuralops import mape
+from neupre.instructions.base import mape
 
-from neupre.misc.dataops import load_data_days_online
-from neupre.misc.dataops import load_data_online
-from neupre.misc.dataops import load_data_corr_online
 from neupre.misc.dataops import load_data_point_online
 
 plt.style.use('ggplot')
 
 
 class BaseBackend(object):
-    def __init__(self):
+    def __init__(self, buffsize):
 
         # self.X_train_onestep = None
         # self.y_train_onestep = None
@@ -28,6 +25,7 @@ class BaseBackend(object):
         self.X_train_start_date = None
         self.y_train_start_date = None
 
+        self.counter = 0
         self.last_line = 0
         # self.predictions_onestep = None
         self.predictions_multistep = None
@@ -36,6 +34,8 @@ class BaseBackend(object):
         self.path = None
         self.data_mean = None
         self.data_std = None
+        self.statspath = None
+        self.buffsize = buffsize
 
         self.maes_multi = []
         self.mses_multi = []
@@ -45,17 +45,16 @@ class BaseBackend(object):
         self.mses_one96 = []
         self.mapes_one96 = []
 
-        with open('online_stats.txt', 'w'):
-            pass
-
     def sim(self):
-        print("Skipujem ", self.last_line, " riadkov")
+        print("Skipping ", self.last_line, " lines")
         new_data = load_data_point_online(maxline=96, skip=self.last_line, path=self.path)
         self.last_line += 96
-        print("Budem skipovat ", self.last_line, " riadkov")
+        print("Will skip ", self.last_line, " lines")
 
         # print("Onestep MAE was", mean_absolute_error(new_data[0], self.predictions_onestep[-1])) # first value was prediction
         # print("Onestep MSE was", mean_squared_error(new_data[0], self.predictions_onestep[-1]))
+
+        # calculate errors of predictions in last step
 
         self.maes_multi.append(mean_absolute_error(new_data, self.predictions_multistep[-1]))
         self.mses_multi.append(mean_squared_error(new_data, self.predictions_multistep[-1]))
@@ -86,21 +85,27 @@ class BaseBackend(object):
         print("Onestep96 MSE was ", self.mses_one96[-1])
         print("Onestep96 MAPE was ", self.mapes_one96[-1])
 
-        f = open('online_stats.txt', 'a')
-        f.write("Predikcia na %s\n" % (self.X_train_start_date + pd.DateOffset(days=70)).isoformat())
+        f = open('%s/stats.txt' % self.statspath, 'a')
+        f.write("%d\n" % self.counter)
+        f.write("Predikcia na %s\n" % (self.X_train_start_date + pd.DateOffset(days=self.buffsize)).isoformat())
         f.write("MAE multi: %f\n" % self.maes_multi[-1])
         f.write("MSE multi: %f\n" % self.mses_multi[-1])
-        f.write("MAPE multi : %f\n" % mape(y_test, y_pred_multi))
+        f.write("MAPE multi: %f\n" % self.mapes_multi[-1])
 
         f.write("MAE one96: %f\n" % self.maes_one96[-1])
         f.write("MSE one96: %f\n" % self.mses_one96[-1])
-        f.write("MAPE one96: %f\n\n" % self.mses_one96[-1])
+        f.write("MAPE one96: %f\n\n" % self.mapes_one96[-1])
+
+        self.counter += 1
+
+        # create new training set, inputs and predict the next step
 
         # self.X_train_onestep = np.delete(self.X_train_onestep, range(96), 0)
         self.X_train_multistep = np.delete(self.X_train_multistep, 0, 0)
         self.X_train_onestep96 = np.delete(self.X_train_onestep96, range(96), 0)
 
-        self.X_test_onestep96 = np.reshape(self.X_test_onestep96, (self.X_test_onestep96.shape[0], self.X_test_onestep96.shape[1], 1))
+        if self.tensor3D:
+            self.X_test_onestep96 = np.reshape(self.X_test_onestep96, (self.X_test_onestep96.shape[0], self.X_test_onestep96.shape[1], 1))
         self.X_train_onestep96 = np.append(self.X_train_onestep96, self.X_test_onestep96, 0)
 
         if self.tensor3D:
@@ -143,7 +148,8 @@ class BaseBackend(object):
         X_test_multistep = np.append(self.X_train_multistep[-1], self.y_train_multistep[-1])[96:]
         if self.tensor3D:
             X_test_multistep = np.reshape(X_test_multistep, (1, X_test_multistep.shape[0], 1))
-            self.X_test_onestep96 = np.reshape(self.X_test_onestep96, (self.X_test_onestep96.shape[0], self.X_test_onestep96.shape[1], 1))
+            self.X_test_onestep96 = np.reshape(self.X_test_onestep96,
+                                               (self.X_test_onestep96.shape[0], self.X_test_onestep96.shape[1], 1))
         else:
             X_test_multistep = np.reshape(X_test_multistep, (1, X_test_multistep.shape[0]))
 
@@ -152,6 +158,7 @@ class BaseBackend(object):
         self.predictions_multistep = np.vstack((self.predictions_multistep, p2))
         self.predictions_onestep96 = np.vstack((self.predictions_onestep96, p3))
 
+        # TODO try without clf, because of draw
         plt.clf()
         self.plot()
 
@@ -165,7 +172,7 @@ class BaseBackend(object):
         train_data = np.append(train_data, self.X_train_multistep[-1])
         train_data = np.append(train_data, self.y_train_multistep[-1])
 
-        train_index = pd.date_range(start=self.X_train_start_date, periods=70 * 96, freq='15T')
+        train_index = pd.date_range(start=self.X_train_start_date, periods=self.buffsize * 96, freq='15T')
         p3_index = p2_index = pd.date_range(start=train_index.date[-1] + pd.DateOffset(), periods=96, freq='15T')
 
         train_series = pd.Series(data=train_data, index=train_index)
@@ -173,8 +180,8 @@ class BaseBackend(object):
         pred3_series = pd.Series(data=p3, index=p3_index)
 
         plt.plot(train_series, color='blue')
-        plt.plot(pred2_series, color='green')
-        plt.plot(pred3_series, color='red')
+        plt.plot(pred2_series, color='#00cc00')
+        plt.plot(pred3_series, color='#ff0000')
 
         try:
             p2before = self.predictions_multistep[-2]
@@ -183,12 +190,16 @@ class BaseBackend(object):
             p3before_index = p2before_index = pd.date_range(start=train_index.date[-1], periods=96, freq='15T')
             p2before_series = pd.Series(data=p2before, index=p2before_index)
             p3before_series = pd.Series(data=p3before, index=p3before_index)
-            plt.plot(p2before_series, color='green')
-            plt.plot(p3before_series, color='red')
+            plt.plot(p2before_series, color='#006600')
+            plt.plot(p3before_series, color='#cc0000')
 
         except IndexError:
             print ("No real data yet")
             pass
+
+        plt.title('Online prediction of %s' % self.path)
+        plt.ylabel('Consumption (z-score)')
+        plt.legend(['training', 'MultiStep', 'Onestep96', 'MultiStep\naccuracy', 'Onestep96\naccuracy'], loc='upper left', bbox_to_anchor=(1, 1), fancybox=True, shadow=True)
 
         plt.draw()
         plt.pause(0.0001)
@@ -223,29 +234,42 @@ class BaseBackend(object):
         # plt.draw()
         # plt.pause(0.0001)
 
-    def initialize(self, is_rec, path, mean, std):
+    def initialize(self, is_rec, path, mean, std, statspath):
         self.tensor3D = is_rec
         self.path = path
         self.data_mean = mean
         self.data_std = std
+        self.statspath = statspath
 
-        # self.X_train_onestep, self.y_train_onestep = load_data_online(maxline=96 * 70, reshape=self.tensor3D)
-        self.X_train_multistep, self.y_train_multistep = load_data_days_online(maxline=96 * 70, reshape=self.tensor3D,
-                                                                               path=self.path)
-        self.X_train_onestep96, self.y_train_onestep96 = load_data_corr_online(maxline=96 * 70, reshape=self.tensor3D,
-                                                                               path=self.path)
-        self.last_line = 96 * 70
+        from neupre.misc.dataops import load_data_days_online
+        from neupre.misc.dataops import load_data_corr_online
 
-        # print("Budem skipovat ", self.last_line, " riadkov")
+        with open('%s/stats.txt' % self.statspath, 'w+'):
+            pass
+
+        # self.X_train_onestep, self.y_train_onestep = load_data_online(maxline=96 * self.buffsize, reshape=self.tensor3D)
+        self.X_train_multistep, self.y_train_multistep = load_data_days_online(maxline=96 * self.buffsize,
+                                                                               reshape=self.tensor3D,
+                                                                               path=self.path)
+
+        self.X_train_onestep96, self.y_train_onestep96 = load_data_corr_online(maxline=96 * self.buffsize,
+                                                                               reshape=self.tensor3D,
+                                                                               path=self.path)
+        self.last_line = 96 * self.buffsize
+
         self.X_train_start_date = pd.Timestamp('2013-07-01', offset='D')
         self.y_train_start_date = pd.Timestamp('2013-07-02', offset='D')
 
         # initial training
         log2, log3 = self.train()
 
+        # for prediction 15 mins ahead
         # X_test_onestep = np.delete(np.append(self.X_train_onestep[-1], self.y_train_onestep[-1]), 0)
 
+        # when training X has just one day, instead of 5
         # X_test_multistep = self.y_train_multistep[-1]
+
+        # next day forecast input (1 output neuron)
         self.X_test_onestep96 = []
         for index in reversed(range(96)):
             index += 1
@@ -259,6 +283,7 @@ class BaseBackend(object):
             ])
         self.X_test_onestep96 = np.array(self.X_test_onestep96)
 
+        # next day forecast input (96 output neuronos)
         X_test_multistep = np.append(self.X_train_multistep[-1], self.y_train_multistep[-1])[96:]
 
         if self.tensor3D:
@@ -269,21 +294,21 @@ class BaseBackend(object):
             # X_test_onestep = np.reshape(X_test_onestep, (1, X_test_onestep.shape[0]))
             X_test_multistep = np.reshape(X_test_multistep, (1, X_test_multistep.shape[0]))
 
-        # print("X_test_onestep je ", X_test_onestep)
-        # print("X_test_multistep je ", X_test_multistep)
+        # print("X_test_onestep ===> ", X_test_onestep)
+        # print("X_test_multistep ===> ", X_test_multistep)
 
         p2, p3 = self.predict(X_test_multistep, self.X_test_onestep96)
-        print p2
-        print p3
+        # print p2
+        # print p3
         p3 = np.reshape(p3, (1, p3.shape[0]))
-        print p3
+        # print p3
         # self.predictions_onestep = np.array(p1)
         self.predictions_multistep = np.array(p2)
         self.predictions_onestep96 = np.array(p3)
-        # print("imp.predicitions je ", self.predictions_onestep)
-        # print("imp.predicitions je ", self.predictions_multistep)
         plt.ion()
         plt.figure(0, figsize=(20, 4))
+        plt.title('Online prediction of %s' % self.path)
+        plt.ylabel('Consumption (z-score)')
         self.plot()
         plt.show()
 

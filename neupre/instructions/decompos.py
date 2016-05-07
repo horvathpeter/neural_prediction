@@ -15,27 +15,6 @@ plt.style.use('ggplot')
 decompfreq = 24 * 60 / 15 * 7
 
 
-class Decompose(Base):
-    """Example"""
-
-    def run(self):
-        print "bezim"
-
-
-def galerie():
-    centrumGalerie = pd.read_csv('Centrum-Galerie-Belegung.csv',
-                                 names=['Datum', 'Belegung'],
-                                 index_col=['Datum'],
-                                 parse_dates=True)
-
-    centrumGalerie.Belegung.plot()
-
-    res = sm.tsa.seasonal_decompose(centrumGalerie.Belegung.interpolate(),
-                                    freq=decompfreq,
-                                    model='additive')
-    resplot = res.plot()
-
-
 def build_model_ffnn():
     model = Sequential()
     model.add(Dense(

@@ -6,10 +6,10 @@ import pandas as pd
 
 def load_data(dataset=None,
               path='neupre/misc/data_/91_trnava_suma_.csv',
-              ratio=1.0,
+              ratio=0.85,
               sequence_length=96,
               shuffle=False,
-              zscore=True,
+              zscore=False,
               reshape=False):
     if isinstance(dataset, np.ndarray):
         power = dataset
@@ -47,14 +47,15 @@ def load_data(dataset=None,
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
         X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-    return [X_train, y_train, X_test, y_test, result_mean, result_std]
+    # return [X_train, y_train, X_test, y_test, result_mean, result_std]
+    return [X_train, y_train, X_test, y_test]
 
 
 def load_data_corr(path='neupre/misc/data_/91_trnava_suma_.csv',
-                   ratio=1.0,
+                   ratio=0.85,
                    sequence_length=6,
                    shuffle=False,
-                   zscore=True,
+                   zscore=False,
                    reshape=False):
     max_values = ratio * 57216
     power = power_from_file(path, max_values)
@@ -96,16 +97,16 @@ def load_data_corr(path='neupre/misc/data_/91_trnava_suma_.csv',
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
         X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-    return [X_train, y_train, X_test, y_test]
+    # return [X_train, y_train, X_test, y_test]
     # return [X_train, y_train, X_test, y_test, result_mean, result_std]
-
+    return [X_train, y_train, X_test, y_test]
 
 def load_data_days(dataset=None,
                    path='neupre/misc/data_/91_trnava_suma_.csv',
-                   ratio=1.0,
+                   ratio=0.85,
                    sequence_length=96,
                    shuffle=False,
-                   zscore=True,
+                   zscore=False,
                    reshape=False):
     if isinstance(dataset, np.ndarray):
         power = dataset
@@ -116,7 +117,7 @@ def load_data_days(dataset=None,
         print ("Data loaded from csv. Formatting...")
 
     result = []
-    for index in np.arange(start=0, stop=57120, step=96):
+    for index in np.arange(start=0, stop=len(power)-96, step=96):
         result.append(power[index: index + 96 * 2])
 
     # for index in range(len(power) - sequence_length*2):
@@ -147,15 +148,16 @@ def load_data_days(dataset=None,
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
         X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-    return [X_train, y_train, X_test, y_test, result_mean, result_std]
+    # return [X_train, y_train, X_test, y_test, result_mean, result_std]
+    return [X_train, y_train, X_test, y_test]
 
 
 def load_data_days_more(dataset=None,
                         path='neupre/misc/data_/91_trnava_suma_.csv',
-                        ratio=1.0,
+                        ratio=0.85,
                         sequence_length=96,
                         shuffle=False,
-                        zscore=True,
+                        zscore=False,
                         reshape=False):
     if isinstance(dataset, np.ndarray):
         power = dataset
@@ -165,7 +167,7 @@ def load_data_days_more(dataset=None,
         power = power_from_file(path, max_values)
 
     result = []
-    for index in np.arange(start=0, stop=57216-96*6, step=96):
+    for index in np.arange(start=0, stop=len(power)-96*6, step=96):
         result.append(power[index: index + 96 * 6])
 
     # for index in range(len(power) - sequence_length*2):
@@ -197,7 +199,8 @@ def load_data_days_more(dataset=None,
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
         X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-    return [X_train, y_train, X_test, y_test, result_mean, result_std]
+    # return [X_train, y_train, X_test, y_test, result_mean, result_std]
+    return [X_train, y_train, X_test, y_test]
 
 
 def load_data_online(maxline,
