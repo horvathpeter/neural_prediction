@@ -1,30 +1,30 @@
 from .base import Base
-from keras.callbacks import Callback
-
-
-class LossHistory(Callback):
-    def __init__(self):
-        super(LossHistory, self).__init__()
-        self.loses_batch_end = []
-        self.val = []
-
-    def on_epoch_begin(self, epoch, logs={}):
-        pass
-
-    def on_epoch_end(self, epoch, logs={}):
-        pass
-
-    def on_batch_begin(self, batch, logs={}):
-        pass
-
-    def on_batch_end(self, batch, logs={}):
-        self.loses_batch_end.append(logs.get('loss'))
-
-    def on_train_begin(self, logs={}):
-        pass
-
-    def on_train_end(self, logs={}):
-        pass
+# from keras.callbacks import Callback
+#
+#
+# class LossHistory(Callback):
+#     def __init__(self):
+#         super(LossHistory, self).__init__()
+#         self.loses_batch_end = []
+#         self.val = []
+#
+#     def on_epoch_begin(self, epoch, logs={}):
+#         pass
+#
+#     def on_epoch_end(self, epoch, logs={}):
+#         pass
+#
+#     def on_batch_begin(self, batch, logs={}):
+#         pass
+#
+#     def on_batch_end(self, batch, logs={}):
+#         self.loses_batch_end.append(logs.get('loss'))
+#
+#     def on_train_begin(self, logs={}):
+#         pass
+#
+#     def on_train_end(self, logs={}):
+#         pass
 
 
 class StaticMlp(Base):
@@ -34,6 +34,7 @@ class StaticMlp(Base):
         from neupre.misc.dataops import get_validation_data
         from neupre.misc.builders import build_model_mlp
         from .base import mape
+        import pandas as pd
         import numpy as np
         import matplotlib.pyplot as plt
         from sklearn.metrics import mean_squared_error, mean_absolute_error
@@ -45,18 +46,16 @@ class StaticMlp(Base):
         mean, std = get_meta_values(self.options['-f'][:-4])
 
         if self.options['--onestep']:
-            X_train, y_train, X_test, y_test = load_data(path=self.options['-f'], sequence_length=96)
+            X_train, y_train, X_test, y_test = load_data(path=self.options['-f'], sequence_length=96, shuffle=True)
             X_train, y_train, X_val, y_val = get_validation_data(X_train, y_train, 0.1)
 
             model = build_model_mlp(inputs=95, hiddens=50, outputs=1)
             # train
-            my_log = LossHistory()
-            log = model.fit(X_train, y_train, nb_epoch=10, batch_size=10, validation_data=(X_val, y_val), verbose=1,
-                            callbacks=[my_log])
+            # my_log = LossHistory()
+            log = model.fit(X_train, y_train, nb_epoch=10, batch_size=10, validation_data=(X_val, y_val), verbose=1)
 
 
-
-            statspath = 'misc/results/static/mlp/%s/' % basename(self.options['-f'])[:-4]
+            statspath = 'results/static/mlp/%s/' % basename(self.options['-f'])[:-4]
             if not exists(statspath):
                 makedirs(statspath)
 
@@ -89,23 +88,27 @@ class StaticMlp(Base):
 
             print("MAPE ", mape(y_test, y_pred))
 
+            # dat_index = pd.date_range(start='2015-1-18', periods=2856, freq='15T')
+            # pd_y_test = pd.Series(data=y_test, index=dat_index)
+            # pd_y_pred = pd.Series(data=y_pred, index=dat_index)
+
             plt.figure(figsize=(20, 4))
             plt.plot(y_test)
             plt.plot(y_pred)
             # plt.show()
+            plt.ylabel('Consumption (kW)')
             plt.savefig('%s/onestep_prediction.png' % statspath)
 
         if self.options['--multistep']:
-            X_train, y_train, X_test, y_test = load_data_days_more(path=self.options['-f'])
+            X_train, y_train, X_test, y_test = load_data_days_more(path=self.options['-f'], shuffle=True)
             X_train, y_train, X_val, y_val = get_validation_data(X_train, y_train, 0.1)
 
             model_m = build_model_mlp(inputs=96 * 5, hiddens=200, outputs=96)
             # train
-            my_log = LossHistory()
-            log = model_m.fit(X_train, y_train, nb_epoch=100, batch_size=1, validation_data=(X_val, y_val), verbose=1,
-                              callbacks=[my_log])
+            # my_log = LossHistory()
+            log = model_m.fit(X_train, y_train, nb_epoch=20, batch_size=1, validation_data=(X_val, y_val), verbose=1)
 
-            statspath = 'misc/results/static/mlp/%s/' % basename(self.options['-f'])[:-4]
+            statspath = 'results/static/mlp/%s/' % basename(self.options['-f'])[:-4]
             if not exists(statspath):
                 makedirs(statspath)
 
@@ -137,6 +140,10 @@ class StaticMlp(Base):
 
             print("MAPE ", mape(y_test, y_pred))
 
+            # dat_index = pd.date_range(start='2015-1-19', periods=2784, freq='15T')
+            # pd_y_test = pd.Series(data=y_test, index=dat_index)
+            # pd_y_pred = pd.Series(data=y_pred, index=dat_index)
+
             plt.figure(figsize=(20, 4))
             plt.plot(y_test)
             plt.plot(y_pred)
@@ -144,14 +151,14 @@ class StaticMlp(Base):
             plt.savefig('%s/multistep_prediction.png' % statspath)
 
         if self.options['--onestep96']:
-            X_train, y_train, X_test, y_test = load_data_corr(path=self.options['-f'])
+            X_train, y_train, X_test, y_test = load_data_corr(path=self.options['-f'], shuffle=True)
             X_train, y_train, X_val, y_val = get_validation_data(X_train, y_train, 0.1)
             model = build_model_mlp(inputs=6, hiddens=5, outputs=1)
             # train
             # log = model.fit(X_train, y_train, nb_epoch=10, batch_size=10, validation_split=0.1, verbose=2)
             log = model.fit(X_train, y_train, nb_epoch=10, batch_size=10, validation_data=(X_val, y_val), verbose=2)
 
-            statspath = 'misc/results/static/mlp/%s/' % basename(self.options['-f'])[:-4]
+            statspath = 'results/static/mlp/%s/' % basename(self.options['-f'])[:-4]
             if not exists(statspath):
                 makedirs(statspath)
 
@@ -159,7 +166,8 @@ class StaticMlp(Base):
             plt.figure()
             plt.plot(log.history['loss'])
             plt.plot(log.history['val_loss'])
-            # plt.show()
+            plt.savefig('%s/mses_onestep96.png' % statspath)
+
             # predict
             y_pred = model.predict(X_test)
             # reshape

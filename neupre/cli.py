@@ -2,15 +2,15 @@
 neupre
 
 Usage:
-  neupre staticmlp [--onestep | --multistep | --onestep96] [-f FILE]
-  neupre staticlstm [--onestep | --multistep | --onestep96] [-f FILE]
-  neupre onlinemlp (--simsteps=<steps> | --simtoend) [--buffsize=<days>] [-f FILE]
-  neupre onlinelstm (--simsteps=<steps> | --simtoend) [--buffsize=<days>] [-f FILE]
+  neupre staticmlp [--onestep --multistep --onestep96] [-f FILE]
+  neupre staticrecurrent [--onestep --multistep --onestep96] [-f FILE]
+  neupre onlinemlp --simsteps=<steps> [--buffsize=<days>] [-f FILE]
+  neupre onlinerecurrent --simsteps=<steps> [--buffsize=<days>] [-f FILE]
   neupre -h | --help
   neupre --version
 
 Options:
-  -f FILE                           Time series file [default: neupre/misc/data_/91_trnava_suma_stand.csv].
+  -f FILE                           Time series file [default: neupre/misc/data_zscore/8_ba_suma_zscore.csv].
   --onestep                         One step ahead prediction (15 minutes ahead).
   --multistep                       Multi step ahead prediction (one day ahead).
   --buffsize=<days>                 Buffer size - size of the window with most recent values in days [default: 70].
@@ -18,9 +18,9 @@ Options:
   --version                         Show version.
 
 Examples:
-  neupre staticmlp --onestep -f neupre/misc/data/91_trnava_suma.csv
-  neupre onlinemlp --simteps=20 neupre/misc/data/91_trnava_suma_stand.csv
-  neupre onlinelstm --simtoend --buffsize=50
+  neupre staticmlp --onestep --multistep --onestep96 -f neupre/misc/data_zscore/91_trnava_suma_zscore.csv
+  neupre onlinemlp --simsteps=20 -f neupre/misc/data_zscore/91_trnava_suma_zscore.csv
+  neupre onlinerecurrent --simsteps=100 --buffsize=50 -f neupre/misc/data_zscore/91_trnava_suma_zscore.csv
 
 Help:
   For help using this tool, please open an issue on the Github repository:
@@ -30,9 +30,7 @@ Help:
 from inspect import getmembers, isclass
 from docopt import docopt
 
-# from . import __version__ as VERSION
-
-VERSION = '1.2'
+from . import __version__ as VERSION
 
 
 def main():
@@ -42,7 +40,7 @@ def main():
 
     # Here we'll try to dynamically match the command the user is trying to run
     # with a pre-defined command class we've already created.
-    print options
+    # print options
     for k, v in options.iteritems():
         if hasattr(instructions, k) and v:
             module = getattr(instructions, k)
@@ -52,74 +50,79 @@ def main():
             command.run()
 
 
-from neupre.instructions import StaticMlp, StaticLSTM
-from neupre.instructions.onlinemlp import OnlineMlp
-from neupre.instructions.onlinelstm import OnlineLstm
+# from neupre.instructions import StaticMlp, StaticRecurrent
+# from neupre.instructions.onlinemlp import OnlineMlp
+# from neupre.instructions.onlinerecurrent import OnlineRecurrent
+#
+# options = {'onlinerecurrent': True,
+#            'onlinemlp': True,
+#            'staticrecurrent': False,
+#            'staticmlp': False,
+#            '--multistep': True,
+#            '--onestep': False,
+#            '--onestep96': False,
+#            '--simsteps': 100,
+#            '--simtoend': False,
+#            '--buffsize': 70,
+#            '-f': 'misc/data_zscore/8_ba_suma_zscore.csv',
+#            '--version': False,
+#            '--help': False}
+#
 
-options = {'onlinelstm': True,
-           'onlinemlp': False,
-           'staticlstm': False,
-           'staticmlp': False,
-           '--multistep': True,
-           '--onestep': True,
-           '--onestep96': True,
-           '--simsteps': 50,
-           '--simtoend': False,
-           '--buffsize': 40,
-           '-f': 'misc/data_zscore/8_ba_suma_zscore.csv',
-           '--version': False,
-           '--help': False}
+# from os import listdir
+# from os.path import isfile, join
 
-
-sim_lstm = OnlineLstm(options)
-sim_lstm.run()
-
-
-from os import listdir
-from os.path import isfile, join
 # data_path = "misc/data_zscore"
 # files = [f for f in listdir(data_path) if isfile(join(data_path, f)) and f[-3:] == 'csv']
 # for datafile in files:
 #     options['-f'] = join(data_path, datafile)
-#     sim_lstm = OnlineLstm(options)
-#     sim_lstm.run()
+#     OnlineLstm(options).run()
+#
+# data_path = "misc/data_zscore"
+# files = [f for f in listdir(data_path) if isfile(join(data_path, f)) and f[-3:] == 'csv']
+# for datafile in files:
+#     options['-f'] = join(data_path, datafile)
+# #     OnlineMlp(options).run()
+#
+# OnlineRecurrent(options).run()
+# # OnlineMlp(options).run()
+
+# maes = {}
+# mses = {}
+# mapes = {}
+# data_path = "neupre/misc/data_zscore"
+# files = [f for f in listdir(data_path) if isfile(join(data_path, f)) and f[-3:] == 'csv']
+# for datafile in files:
+#     options['-f'] = join(data_path, datafile)
+#     # mae, mse, mape = StaticMlp(options).run()
+#     mae, mse, mape = StaticLSTM(options).run()
+#     maes[datafile] = mae
+#     mses[datafile] = mse
+#     mapes[datafile] = mape
+#
+# StaticMlp(options).run()
 
 
+#
+#
+from os import listdir
+from os.path import isfile, join
 # data_path = "misc/data_zscore"
 # files = [f for f in listdir(data_path) if isfile(join(data_path, f)) and f[-3:] == 'csv']
 # print files
 # for datafile in files:
 #     options['-f'] = join(data_path, datafile)
 #     print datafile
-#     # sim_lstm = StaticLSTM(options)
-#     # sim_lstm.run()
+#     sim_lstm = StaticLSTM(options)
+#     sim_lstm.run()
 #     # sim_mlp = StaticMlp(options)
 #     # sim_mlp.run()
-#     sim_lstm = OnlineLstm(options)
-#     sim_lstm.run()
+#     # sim_lstm = OnlineLstm(options)
+#     # sim_lstm.run()
 #     # sim_mlp = OnlineMlp(options)
 #     # sim_mlp.run()
 
-# sim_lstm = OnlineLstm(options)
-# sim_lstm.run()
-#
-# sl = StaticLSTM(options)
-# sl.run()
 
-# data_path = "neupre/misc/data_"
-# file = "neupre/misc/data_/91_trnava_suma_.csv"
-
-# simulation_mlp = StaticMlp(options)
-# simulation_lstm = StaticLSTM(options)
-# simulation_mlp.run()
-# simulation_lstm.run()
-
-# sim_mlp = OnlineMlp(options)
-# sim_mlp.run()
-
-
-#
-# #
 # from os.path import isfile, join
 # from os.path import basename
 # import pandas as pd
@@ -146,6 +149,3 @@ from os.path import isfile, join
 #         f.write('%f\n' % std)
 #
 #     ele.to_csv(datafile, header=False, index=False)
-
-
-

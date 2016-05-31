@@ -3,9 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from neupre.instructions.base import mape
-
 from neupre.misc.dataops import load_data_point_online
-
 plt.style.use('ggplot')
 
 
@@ -45,6 +43,39 @@ class BaseBackend(object):
         self.mses_one96 = []
         self.mapes_one96 = []
 
+        self.mapes_working_days_multi = []
+        self.mapes_holidays_multi = []
+        self.mapes_working_days_one96 = []
+        self.mapes_holidays_one96 = []
+
+        self.mapes_jan_one96 = []
+        self.mapes_feb_one96 = []
+        self.mapes_mar_one96 = []
+        self.mapes_apr_one96 = []
+        self.mapes_may_one96 = []
+        self.mapes_jun_one96 = []
+        self.mapes_jul_one96 = []
+        self.mapes_aug_one96 = []
+        self.mapes_sep_one96 = []
+        self.mapes_oct_one96 = []
+        self.mapes_nov_one96 = []
+        self.mapes_dec_one96 = []
+
+        self.mapes_jan_multi = []
+        self.mapes_feb_multi = []
+        self.mapes_mar_multi = []
+        self.mapes_apr_multi = []
+        self.mapes_may_multi = []
+        self.mapes_jun_multi = []
+        self.mapes_jul_multi = []
+        self.mapes_aug_multi = []
+        self.mapes_sep_multi = []
+        self.mapes_oct_multi = []
+        self.mapes_nov_multi = []
+        self.mapes_dec_multi = []
+
+
+
     def sim(self):
         print("Skipping ", self.last_line, " lines")
         new_data = load_data_point_online(maxline=96, skip=self.last_line, path=self.path)
@@ -77,6 +108,55 @@ class BaseBackend(object):
         self.mapes_multi.append(mape(y_test, y_pred_multi))
         self.mapes_one96.append(mape(y_test, y_pred_one96))
 
+        prediction_day = self.X_train_start_date + pd.DateOffset(days=self.buffsize)
+
+        # statistics...
+        if prediction_day.dayofweek >= 5:
+            self.mapes_holidays_one96.append(self.mapes_one96[-1])
+            self.mapes_holidays_multi.append(self.mapes_multi[-1])
+        elif prediction_day.dayofweek < 5 and prediction_day not in pd.date_range(start='2013-12-21', periods=24)\
+                and prediction_day not in pd.date_range(start='2014-04-15', periods=20):
+            self.mapes_working_days_one96.append(self.mapes_one96[-1])
+            self.mapes_working_days_multi.append(self.mapes_multi[-1])
+
+        if prediction_day.month == 1:
+            self.mapes_jan_one96.append(self.mapes_one96[-1])
+            self.mapes_jan_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 2:
+            self.mapes_feb_one96.append(self.mapes_one96[-1])
+            self.mapes_feb_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 3:
+            self.mapes_mar_one96.append(self.mapes_one96[-1])
+            self.mapes_mar_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 4:
+            self.mapes_apr_one96.append(self.mapes_one96[-1])
+            self.mapes_apr_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 5:
+            self.mapes_may_one96.append(self.mapes_one96[-1])
+            self.mapes_may_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 6:
+            self.mapes_jun_one96.append(self.mapes_one96[-1])
+            self.mapes_jun_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 7:
+            self.mapes_jul_one96.append(self.mapes_one96[-1])
+            self.mapes_jul_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 8:
+            self.mapes_aug_one96.append(self.mapes_one96[-1])
+            self.mapes_aug_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 9:
+            self.mapes_sep_one96.append(self.mapes_one96[-1])
+            self.mapes_sep_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 10:
+            self.mapes_oct_one96.append(self.mapes_one96[-1])
+            self.mapes_oct_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 11:
+            self.mapes_nov_one96.append(self.mapes_one96[-1])
+            self.mapes_nov_multi.append(self.mapes_multi[-1])
+        elif prediction_day.month == 12:
+            self.mapes_dec_one96.append(self.mapes_one96[-1])
+            self.mapes_dec_multi.append(self.mapes_multi[-1])
+
+        print("Prediction for %s\n" % prediction_day.isoformat())
         print("Multistep MAE was ", self.maes_multi[-1])
         print("Multistep MSE was ", self.mses_multi[-1])
         print("Multistep MAPE was ", self.mapes_multi[-1])
@@ -85,16 +165,16 @@ class BaseBackend(object):
         print("Onestep96 MSE was ", self.mses_one96[-1])
         print("Onestep96 MAPE was ", self.mapes_one96[-1])
 
-        f = open('%s/stats.txt' % self.statspath, 'a')
-        f.write("%d\n" % self.counter)
-        f.write("Predikcia na %s\n" % (self.X_train_start_date + pd.DateOffset(days=self.buffsize)).isoformat())
-        f.write("MAE multi: %f\n" % self.maes_multi[-1])
-        f.write("MSE multi: %f\n" % self.mses_multi[-1])
-        f.write("MAPE multi: %f\n" % self.mapes_multi[-1])
+        with open('%s/stats.txt' % self.statspath, 'a') as f:
+            f.write("%d\n" % self.counter)
+            f.write("Prediction for %s\n" % prediction_day.isoformat())
+            f.write("MAE multi: %f\n" % self.maes_multi[-1])
+            f.write("MSE multi: %f\n" % self.mses_multi[-1])
+            f.write("MAPE multi: %f\n" % self.mapes_multi[-1])
 
-        f.write("MAE one96: %f\n" % self.maes_one96[-1])
-        f.write("MSE one96: %f\n" % self.mses_one96[-1])
-        f.write("MAPE one96: %f\n\n" % self.mapes_one96[-1])
+            f.write("MAE one96: %f\n" % self.maes_one96[-1])
+            f.write("MSE one96: %f\n" % self.mses_one96[-1])
+            f.write("MAPE one96: %f\n\n" % self.mapes_one96[-1])
 
         self.counter += 1
 
@@ -306,7 +386,7 @@ class BaseBackend(object):
         self.predictions_multistep = np.array(p2)
         self.predictions_onestep96 = np.array(p3)
         plt.ion()
-        plt.figure(0, figsize=(20, 4))
+        plt.figure(0, figsize=(17, 4))
         plt.title('Online prediction of %s' % self.path)
         plt.ylabel('Consumption (z-score)')
         self.plot()

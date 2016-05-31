@@ -4,10 +4,14 @@ from .base_backend import BaseBackend
 class LstmBackend(BaseBackend):
     def __init__(self, inpmulti, hidmulti, outmulti, learning_rate, inp96, hid96, out96, path, buffsize, mean, std, statspath):
         from neupre.misc.builders import build_model_lstm_simple, build_model_recurrent
-        super(LstmBackend, self).__init__(buffsize)
+        super(LstmBackend, self).__init__(int(buffsize))
 
         self.model_multistep = build_model_recurrent(inpmulti, hidmulti, outmulti)
         self.model_onestep96 = build_model_recurrent(inp96, hid96, out96)
+
+        # self.model_multistep = build_model_lstm_simple(inpmulti, hidmulti, outmulti)
+        # self.model_onestep96 = build_model_lstm_simple(inp96, hid96, out96)
+
         self.initialize(True, path, mean, std, statspath)
 
     def train(self):
@@ -15,6 +19,7 @@ class LstmBackend(BaseBackend):
         #                               validation_split=0.1, verbose=1)
         log2 = self.model_multistep.fit(self.X_train_multistep, self.y_train_multistep, batch_size=10, nb_epoch=2,
                                         validation_split=0.1, verbose=1)
+
         log3 = self.model_onestep96.fit(self.X_train_onestep96, self.y_train_onestep96, batch_size=10, nb_epoch=2,
                                         validation_split=0.1, verbose=1)
         return [log2, log3]

@@ -1,33 +1,33 @@
 from .base import Base
-from keras.callbacks import Callback
+# from keras.callbacks import Callback
+#
+#
+# class LossHistory(Callback):
+#     def __init__(self):
+#         super(LossHistory, self).__init__()
+#         self.loses_batch_end = []
+#         self.val = []
+#
+#     def on_epoch_begin(self, epoch, logs={}):
+#         pass
+#
+#     def on_epoch_end(self, epoch, logs={}):
+#         pass
+#
+#     def on_batch_begin(self, batch, logs={}):
+#         pass
+#
+#     def on_batch_end(self, batch, logs={}):
+#         self.loses_batch_end.append(logs.get('loss'))
+#
+#     def on_train_begin(self, logs={}):
+#         pass
+#
+#     def on_train_end(self, logs={}):
+#         pass
 
 
-class LossHistory(Callback):
-    def __init__(self):
-        super(LossHistory, self).__init__()
-        self.loses_batch_end = []
-        self.val = []
-
-    def on_epoch_begin(self, epoch, logs={}):
-        pass
-
-    def on_epoch_end(self, epoch, logs={}):
-        pass
-
-    def on_batch_begin(self, batch, logs={}):
-        pass
-
-    def on_batch_end(self, batch, logs={}):
-        self.loses_batch_end.append(logs.get('loss'))
-
-    def on_train_begin(self, logs={}):
-        pass
-
-    def on_train_end(self, logs={}):
-        pass
-
-
-class StaticLSTM(Base):
+class StaticRecurrent(Base):
     def run(self):
         import numpy as np
         import matplotlib.pyplot as plt
@@ -40,22 +40,27 @@ class StaticLSTM(Base):
         from .base import get_meta_values
         from os.path import basename, exists
         from os import makedirs
-
         plt.style.use('ggplot')
+
+        nettype = 'vanilla'
+        # nettype = 'lstm'
         mean, std = get_meta_values(self.options['-f'][:-4])
 
         if self.options['--onestep']:
             X_train, y_train, X_test, y_test = load_data(path=self.options['-f'], reshape=True)
             X_train, y_train, X_val, y_val = get_validation_data(X_train, y_train, 0.1)
+
+            # build
             # model = build_model_lstm(95, 50, 25, 1)
-            model = build_model_lstm_simple(inputs=95, hiddens1=50, outputs=1)
+            model = build_model_recurrent(inputs=95, hiddens1=50, outputs=1)
+            # model = build_model_lstm_simple(inputs=95, hiddens1=50, outputs=1)
+
             # train
             # log = model.fit(X_train, y_train, nb_epoch=10, batch_size=100, validation_split=0.1, verbose=2)
-            my_log = LossHistory()
-            log = model.fit(X_train, y_train, nb_epoch=1, batch_size=100, validation_data=(X_val, y_val), verbose=1,
-                            callbacks=[my_log])
+            # my_log = LossHistory()
+            log = model.fit(X_train, y_train, nb_epoch=10, batch_size=100, validation_data=(X_val, y_val), verbose=1)
 
-            statspath = 'misc/results/static/recurrent/%s/' % basename(self.options['-f'])[:-4]
+            statspath = 'results/static/recurrent/%s/%s/' % (nettype, basename(self.options['-f'])[:-4])
             if not exists(statspath):
                 makedirs(statspath)
 
@@ -64,6 +69,7 @@ class StaticLSTM(Base):
             plt.plot(log.history['loss'])
             plt.plot(log.history['val_loss'])
             # plt.show()
+            plt.ylabel('Mean Squared Error')
             plt.savefig('%s/mses_onestep.png' % statspath)
 
             # predict
@@ -91,8 +97,7 @@ class StaticLSTM(Base):
             plt.figure(figsize=(20, 4))
             plt.plot(y_test)
             plt.plot(y_pred)
-            # plt.show()
-            # plt.savefig(self.options['-f'] + '_lstm_onestep_pred.png')
+            plt.ylabel('Consumption (kW)')
             plt.savefig('%s/onestep_prediction.png' % statspath)
 
         if self.options['--multistep']:
@@ -100,20 +105,16 @@ class StaticLSTM(Base):
             X_train, y_train, X_val, y_val = get_validation_data(X_train, y_train, 0.1)
             # X_train, y_train, X_test, y_test, mean, std = load_data_days(path=self.options['-f'], reshape=True)
 
-            # model = build_model_lstm_simple(96, 200, 96)
-            model = build_model_lstm_simple(96*5, 200, 96)
-            # model = build_model_recurrent(96, 200, 96)
+            # build
+            # model = build_model_lstm_simple(96*5, 200, 96)
+            model = build_model_recurrent(96*5, 200, 96)
 
             # train
-            my_log = LossHistory()
-
+            # my_log = LossHistory()
             # log = model.fit(X_train, y_train, nb_epoch=30, batch_size=20, validation_split=0.1, verbose=2)
-            log = model.fit(X_train, y_train, nb_epoch=5, batch_size=10, validation_data=(X_val, y_val), verbose=1,
-                            callbacks=[my_log])
+            log = model.fit(X_train, y_train, nb_epoch=20, batch_size=10, validation_data=(X_val, y_val), verbose=1)
 
-            # print log.history
-
-            statspath = 'misc/results/static/recurrent/%s/' % basename(self.options['-f'])[:-4]
+            statspath = 'results/static/recurrent/%s/%s/' % (nettype, basename(self.options['-f'])[:-4])
             if not exists(statspath):
                 makedirs(statspath)
 
@@ -121,6 +122,7 @@ class StaticLSTM(Base):
             plt.plot(log.history['loss'])
             plt.plot(log.history['val_loss'])
             # plt.show()
+            plt.ylabel('Mean Squared Error')
             plt.savefig('%s/mses_multistep.png' % statspath)
 
             # predict
@@ -147,41 +149,33 @@ class StaticLSTM(Base):
             plt.figure(figsize=(20, 4))
             plt.plot(y_test)
             plt.plot(y_pred)
-            # plt.show()
+            plt.ylabel('Consumption (kW)')
             plt.savefig('%s/multistep_prediction.png' % statspath)
 
         if self.options['--onestep96']:
             from neupre.misc.dataops import load_data_corr
             X_train, y_train, X_test, y_test = load_data_corr(reshape=True,
                                                               path=self.options['-f'])
-            # model = build_model_lstm(6, 3, 2, 1)
-            model2 = build_model_lstm_simple(6, 3, 1)
-            # model3 = build_model_mlp(6, 3, 1)
-            # model4 = build_model_recurrent(6, 3, 1)
+
+            # model = build_model_lstm_simple(6, 3, 1)
+            model = build_model_recurrent(6, 3, 1)
 
             # train
-            # log = model.fit(X_train, y_train, nb_epoch=2, batch_size=10, validation_split=0.1, verbose=1)
-            log = model2.fit(X_train, y_train, nb_epoch=3, batch_size=100, validation_split=0.1, verbose=1)
-            # log = model3.fit(X_train, y_train, nb_epoch=2, batch_size=10, validation_split=0.1, verbose=1)
-            # log = model4.fit(X_train, y_train, nb_epoch=2, batch_size=10, validation_split=0.1, verbose=1)
+            log = model.fit(X_train, y_train, nb_epoch=10, batch_size=10, validation_split=0.1, verbose=1)
 
-            statspath = 'misc/results/static/recurrent/%s/' % basename(self.options['-f'])[:-4]
+            statspath = 'results/static/recurrent/%s/%s/' % (nettype, basename(self.options['-f'])[:-4])
             if not exists(statspath):
                 makedirs(statspath)
 
             plt.figure()
             plt.plot(log.history['loss'])
             plt.plot(log.history['val_loss'])
-            # plt.show()
-            # plt.savefig(self.options['-f'] + '_lstm_multistep_mse.png')
+            plt.ylabel('Mean Squared Error')
             plt.savefig('%s/mses_onestep96.png' % statspath)
 
             # predict
-            # y_pred = model.predict(X_test)
-            y_pred = model2.predict(X_test)
-            # y_pred = model3.predict(X_test)
-            # y_pred = model4.predict(X_test)
-
+            y_pred = model.predict(X_test)
+            # reshape
             y_pred = np.reshape(y_pred, (y_pred.shape[0],))
 
             print("MAE  ", mean_absolute_error(y_test, y_pred))
@@ -201,5 +195,5 @@ class StaticLSTM(Base):
             plt.figure(figsize=(20, 4))
             plt.plot(y_test)
             plt.plot(y_pred)
-            # plt.show()
+            plt.ylabel('Consumption (kW)')
             plt.savefig('%s/onestep96_prediction.png' % statspath)

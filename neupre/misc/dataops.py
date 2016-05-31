@@ -6,7 +6,7 @@ import pandas as pd
 
 def load_data(dataset=None,
               path='neupre/misc/data_/91_trnava_suma_.csv',
-              ratio=0.85,
+              ratio=1.0,
               sequence_length=96,
               shuffle=False,
               zscore=False,
@@ -52,7 +52,7 @@ def load_data(dataset=None,
 
 
 def load_data_corr(path='neupre/misc/data_/91_trnava_suma_.csv',
-                   ratio=0.85,
+                   ratio=1.0,
                    sequence_length=6,
                    shuffle=False,
                    zscore=False,
@@ -103,7 +103,7 @@ def load_data_corr(path='neupre/misc/data_/91_trnava_suma_.csv',
 
 def load_data_days(dataset=None,
                    path='neupre/misc/data_/91_trnava_suma_.csv',
-                   ratio=0.85,
+                   ratio=1.0,
                    sequence_length=96,
                    shuffle=False,
                    zscore=False,
@@ -154,7 +154,7 @@ def load_data_days(dataset=None,
 
 def load_data_days_more(dataset=None,
                         path='neupre/misc/data_/91_trnava_suma_.csv',
-                        ratio=0.85,
+                        ratio=1.0,
                         sequence_length=96,
                         shuffle=False,
                         zscore=False,
@@ -307,56 +307,6 @@ def load_data_point_online(maxline=96,
     result = np.array(data[2])
     print ("Data shape : ", result.shape)
     return result
-
-
-# TODO corelations
-def load_data_days_add():
-    path_to_dataset = 'misc/91_trnava_suma_.csv'
-    with open(path_to_dataset) as f:
-        data = csv.reader(f, delimiter=',')
-        power = []
-        nb_of_values = 0
-        rng = pd.date_range(start='2013-07-01', end='2015-02-17', freq='15T')
-        rng = rng[:-1]
-        inc = 0
-        for line in data:
-            try:
-                power.append(float(line[2]))
-                if rng[inc].dayofweek is 5 or rng[inc].dayofweek is 6:
-                    power.append(0)
-                else:
-                    power.append(1)
-                nb_of_values += 1
-                inc += 1
-            except ValueError:
-                pass
-    print ("Data loaded from csv. Formatting...")
-
-    result = []
-    for index in np.arange(start=0, stop=114240, step=96 * 2):
-        result.append(power[index: index + 96 * 2 * 2])
-
-    result = np.array(result)
-    result_mean = result[:, 0::2].mean()
-    result_std = result[:, 0::2].std()
-    result[:, 0::2] -= result_mean
-    result[:, 0::2] /= result_std
-    # result = zscore(result)
-
-    print ("Data shape : ", result.shape)
-    row = int(round(0.95 * result.shape[0]))
-
-    train = result[:row, :]
-    half = train.shape[1] / 2
-    X_train = train[:, :half]
-    y_train = train[:, half:]
-    X_test = result[row:, :half]
-    y_test = result[row:, half:]
-
-    y_train = y_train[:, 0::2]
-    y_test = y_test[:, 0::2]
-
-    return [X_train, y_train, X_test, y_test]
 
 
 def power_from_file(path_to_dataset, maxline):

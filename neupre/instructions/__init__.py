@@ -1,4 +1,4 @@
-from staticlstm import *
-from staticmlp import *
+from staticrecurrent import StaticRecurrent
+from staticmlp import StaticMlp
 from onlinemlp import *
-from onlinelstm import *
+from onlinerecurrent import *
